@@ -105,12 +105,9 @@ classKey <- read_csv(ckN)
 
 
 for (fn in sL) {
-  # determine the year of the file 
-  yrCol <- paste0("X_", str_extract(fn, "(?!_)\\d{8}(?=_)"))
-  
   # read in extracted data and group by datasource
   mDat_sub <- read_csv(fn, guess_max = 3800) %>%
-    # remove unnes columns
+    # remove unces. columns
     select(-colRe) %>%
     group_by(shpSource) %>%
     nest()
@@ -118,11 +115,34 @@ for (fn in sL) {
   #### PART 1: Filter out points that Mui indicated should not be kept ####
   # determine which index belongs to mui_edit
   mIndex <- which(mDat_sub$shpSource == "mui_edit")
+  # determine year
+  # TODO ~! determine if this is the best way to extract the date string 
+  yrCol <- str_extract(fn, "(?!_)\\d{8}(?=_)")
+  
+    # conditions for filtering mui data
+    # filter 2017 based on what she labeled as suitable for 2017 
+    # WHAT IS THE best course of action here.... 
+    # you should actually look at the spatial distribution of Muis points on top of the images before you decide
+  
+    if (str_detect(yrCol, "2017") == T) {
+      muiDate <- "X_20171101"
+      # if 2018
+    } else if (str_detect(yrCol, "2018") == T) {
+      muiDate <- "X_20181007"
+      # if 2019
+    } else if (str_detect(yrCol, "2019") == T) {
+      # determine if spring + winter or summer + fall
+      monthCol <- month(ymd(yrCol))
+      if (monthCol %in% c(12,1,2,3,4,5)) {
+        muiDate <- "X_20190425"
+      } else if (monthCol %in% c(6,7,8,9,10,11)) {
+        muiDate <- "X_20191002"
+      }
+    }
+
+   
   
   ## Changed March 1 2021
-  # should have a sub based on the season and the year 
-  # so would remove those from 2018 that Mui said were not a good fit...
-  # WHY ARE THESE TRUE AND FALSE NOW? ugh
   
     mDat_sub$data[[mIndex]] <- mDat_sub$data[[mIndex]] %>%  
     filter(X_20190425  == 1 & X_20191002  == 1)
