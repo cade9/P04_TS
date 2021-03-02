@@ -1,13 +1,16 @@
 # Title: 02_editExtract.R
-# Status:
 # Author: Christiana Ade
-# Date: 1/27/2021
-# Modified: 
+# Date: 3/1/2021
 # Purpose: Edit the extracted raster points to include the different classifications we are trying
 # **Requires** 
 # 1) NOTE CREATED class key by editing this by hand and the table 
 # tibble(Species_1 = unique(sort(allDat$Species_1)))
 # write_csv(m,"./Data/CSV/02_ClassPartKey.csv")
+#
+# EDITS MADE
+# 1) Filtering for duplicates 
+# 2) remove unesc. columns
+# 3) remove points that Mui labeled as unsuitable by year and season
 ####################################################################################
 ## require packages
 require(raster)
@@ -84,6 +87,14 @@ return(df2)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ####             END USER DEFINED VARIABLES        ####
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+select_if(~sum(!is.na(.)) > 0)
+
+# columns to remove 
+colRe <- c("GPS_Date", "GPS_Time","Lifeform",	"Class",	"ORIG_FID",	"Area",	"ORIG_FID_1", "Area_1",
+           "randno","Rake_Spe11",	"Rake_Spe12", "Photo_Link", "yearcomm", "Photos", 
+           "Team", "ID", "Horz_Prec", "Northing", "Easting", "Datafile",
+           "Unfilt_Pos", "Filt_Pos","GNSS_Lengt")
+
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -92,23 +103,26 @@ return(df2)
 # read in class key
 classKey <- read_csv(ckN)
 
-fn <- sL[10]
+
 for (fn in sL) {
   # determine the year of the file 
   yrCol <- paste0("X_", str_extract(fn, "(?!_)\\d{8}(?=_)"))
   
   # read in extracted data and group by datasource
-  suppressWarnings(mDat_sub <- read_csv(fn) %>%
-  #~! TODO : remove this filter later when you figure out what is going out with all of Shruti's shapefiles 
-                     #filter(!shpN %in% shpRemove) %>%
-                     group_by(shpSource) %>%
-                     nest())
+  mDat_sub <- read_csv(fn, guess_max = 3800) %>%
+    # remove unnes columns
+    select(-colRe) %>%
+    group_by(shpSource) %>%
+    nest()
   
   #### PART 1: Filter out points that Mui indicated should not be kept ####
   # determine which index belongs to mui_edit
   mIndex <- which(mDat_sub$shpSource == "mui_edit")
   
   ## Changed March 1 2021
+  # should have a sub based on the season and the year 
+  # so would remove those from 2018 that Mui said were not a good fit...
+  # WHY ARE THESE TRUE AND FALSE NOW? ugh
   
     mDat_sub$data[[mIndex]] <- mDat_sub$data[[mIndex]] %>%  
     filter(X_20190425  == 1 & X_20191002  == 1)
