@@ -8,7 +8,11 @@
 ####################################################################################
 ## require packages
 require(tidyverse)
-projDir <- "Z:/Projects/DSC_Delta/Task1/P03_newMui"
+if(Sys.info()["sysname"] == "Windows"){
+  projDir <- "Z:/Projects/DSC_Delta/Task1/P03_newMui" } else {
+    projDir <- "/beanstore/Projects/DSC_Delta/Task1/P03_newMui"
+  }
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ####             START USER DEFINED VARIABLES       #### 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -23,26 +27,31 @@ outFile <- paste0(projDir, "/Output/CSV/04_editSpec/roiRemoved_R1_0228.csv")
 ####             END USER DEFINED VARIABLES        ####
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ####             START SCRIPT                      ####
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # read in the file that you created after you removed some bad spectra and flagged them 
-mDatNew <- read_csv(fLNew) %>%
+mDatNew <- read_csv(fLNew, guess_max = 10000, col_types = cols()) %>%
   filter(!rDate == "20190425") %>%
   mutate(rYr = str_extract(rDate,"(2016|2017|2018|2019)")) %>%
   mutate(Class6_ID = paste0(Class6,"_",rYr, "_", ras_col,"_",ras_row))
   
 # read in the old file 
-mDatOld <- map_dfr(fLOld, read_csv) %>% 
+# these are just the fall dates 
+mDatOld <- map_dfr(fLOld, read_csv, guess_max = 10000, col_types = cols()) %>% 
   filter(!rDate == "20190425") %>%
   mutate(rYr = str_extract(rDate,"(2016|2017|2018|2019)")) %>%
   mutate(Class6_ID = paste0(Class6,"_",rYr, "_", ras_col,"_",ras_row))
-# removed 275 spectrum
 
+# removed 275 spectrum
+nrow(mDatOld) # 10131
+nrow(mDatNew) # 9361
+
+# okay so we are doing it by year
+
+##################### PART 1: Label Deleted Spectra #####################################
 ### Determine which ones were deleted 
-# create a delete column and then also copy over cadeFil column(in the next round of edits, 
-# you should just add delete)
+# create a delete column 
 # for 2017 only returns 254 spectra, so either there are some dupilcates orr??
 mDel <- mDatOld %>%
   filter(!Class6_ID %in% mDatNew$Class6_ID) %>%
