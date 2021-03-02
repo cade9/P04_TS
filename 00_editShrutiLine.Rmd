@@ -1,0 +1,49 @@
+---
+title: "Add Unique IDs to the shpFiles "
+output: pdf_document
+---
+```{r}
+require(rgdal)
+require(tidyverse)
+require(spdplyr)
+```
+
+
+## 1) Shruti Line
+
+```{r}
+# ran on 2/8/2021
+sFL <- list.files("./Output/Vector/00_editTrainTest/ShrutiExtra", pattern = ".shp$",full.names = T)
+lF <- str_subset(sFL, "LineData")
+lineShp <- readOGR(lF) %>%
+    mutate(shpSource = "shrutiAddLine_edit",
+           sLineID = 1:15)
+  
+#shruti extra directory
+outShr <- "./Output/Vector/00_editTrainTest/ShrutiExtra" 
+
+# writeOGR(lineShp,outShr, "Delta_201910_LineData_nudged_SK_editV2", driver = "ESRI Shapefile", overwrite_layer=T) 
+# note that without V2 is the same, but V2 was added so they could all be run on the same list patternv
+```
+
+
+We are deciding not to extract any of the other places from shruti though and just using those places that are related to cstars for soil and npv and what mui provided 
+should we even bother extracting your EMR and SAV when we are not really using them?
+The CSTARS_Poly_soil_NPV_water should only have the filtered areas, but not the required edits 
+
+```{r}
+sL <- list.files("./Output/Vector/00_editTrainTest", pattern = "_edit.shp$", recursive = T, full.names = T)
+sL <- str_subset(sL, "ShrutiExtra", negate = T)
+outDir <- "./Output/Vector/00_editTrainTest/version2"
+for (s in sL){
+  # read in shapefile
+  shp <- readOGR(s) %>% 
+    # add in an ca 
+    mutate(pointID = 1:nrow(.))
+
+  bn <- paste0(str_extract(s, "(?=[^\\\\|/]*$)(.)+(?=\\.)"), "V2")
+  writeOGR(shp, dsn = outDir, layer = bn, driver = "ESRI Shapefile", overwrite_layer = T)
+}
+
+```
+

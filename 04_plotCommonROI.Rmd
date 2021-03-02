@@ -1,0 +1,174 @@
+---
+title: "Step 15 - plot UniROI"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+#### Description
+This plots the spectra of each of the commonROIds by each year
+
+some resources
+https://github.com/thomasp85/patchwork/issues/1 
+https://github.com/thomasp85/patchwork 
+https://cran.r-project.org/web/packages/gridExtra/vignettes/arrangeGrob.html
+http://bioinfo.iric.ca/introduction-to-cowplot/
+https://cran.r-project.org/web/packages/cowplot/vignettes/introduction.html
+https://cran.r-project.org/web/packages/cowplot/vignettes/plot_grid.html
+
+```{r}
+#load packages
+require(raster)
+require(tidyverse)
+require(stringr)
+require(rgdal)
+require(ggplot2)
+require(ggthemes)
+require(lubridate)
+require(readxl)
+require(patchwork)
+library(gridExtra)
+library(grid)
+library(lattice)
+```
+
+
+##### Step 1 Extact information and create data table
+```{r}
+
+# locate shapefiles
+shpDir <- "./Data/Vector/UnqID"
+# list all shapefiles without extension 
+shpList <- list.files(shpDir, pattern = "shp$") %>%
+        str_extract(., ".+?(?=\\.shp)")
+
+# read in individual merged file
+# the four shpLists were combinded above in QGIS
+# vector -> merge layer factors -> merge vector files
+
+myShp <- readOGR(shpDir, shpList[1])
+myShp@data <- myShp@data %>% select(c(roiID))
+
+# rasterList
+rastList <- list.files(c("./Data/L8_2014-2015_test","./Data/L8_2013_2016"), pattern= "\\.tif$", full.names = T)
+
+# datesList
+myDates <- str_extract(rastList,"(2013|2014|2015|2016)\\d{4}")
+
+#myData frame
+allData <- NULL
+
+for (i in 1:length(rastList)){
+  
+    ## load raster
+    # bands 2:8 because band 1 is sr_aerosol which should not be included in analysis
+    myRaster <- stack(rastList[i])[[2:8]] #i
+    # rename the bands to 1 through 7
+    names(myRaster) <- paste0("B",seq(1:7))
+    
+    ## raster date
+    rasterDate <- myDates[i] # i
+  
+    ## Extract 
+    myExtract <- raster::extract(myRaster,myShp, sp = T)
+    
+    ## reorganize data
+    myData <- gather(myExtract@data, key = roiID, value = reflectance) 
+    # I am not sure why this happens and will have to investigate
+    # rename columns
+    names(myData) <- c("roiID","bandNumber","reflectance")
+    # add date column
+    myData$rDate <- rasterDate
+    
+    allData <- rbind(myData,allData)
+  rm(myRaster)
+  
+    
+}
+
+
+```
+
+##### Step 2: Wrangle data
+
+```{r}
+# load landsat 8 bands
+l8Data <- read_xlsx("./Data/ancillary/L8_bands.xlsx")
+
+# wrangle data
+allData2 <- allData %>%
+  # rdate change to date
+  mutate(rDate2 = ymd(rDate),
+         rYear = year(rDate2),
+         class = str_extract(roiID,"(EMR|FLT|SAV|water)")) %>%
+  # bind
+  left_join(l8Data, by = c("bandNumber" = "Band")) %>%
+  # filter by class
+  #filter(class == "EMR") %>%
+  # group by year and roiID
+  group_by(roiID,rYear)
+
+  
+  test <- allData2 %>%
+    do( 
+      plots = ggplot(data = .,aes(y= reflectance, x = wvl_center, col = rDDate)) +
+        geom_line(aes(colour=rDate), size=1) + scale_y_continuous(breaks = seq(0, 0.6, 0.10)) +ggtitle(.$roiID))
+
+  
+  
+roiUni <- unique(test$roiID)
+for (i in 1:length(roiUni)){
+  roiName <- roiUni[i] #i
+  test2 <- test %>% filter(roiID == roiName)
+    
+  p1 <- test2$plots[[1]]
+  p2 <- test2$plots[[2]]
+  p3 <- test2$plots[[3]]
+  p4 <- test2$plots[[4]]
+  #chart$plots[1][[1]]
+  myPlot <- p1+p2 + p3 +p4 
+  
+  # filename
+  outDir <- "./Data/ancillary/uniROIplots"
+  myFile <- paste0(outDir,"/",roiName,".png")
+  
+  ggsave(myPlot,filename=myFile,width=13.66,height=7.05,limitsize = FALSE) 
+  }
+
+  #$+  patchwork::plot_layout(ncol = 2, widths = c(100, 100))
+  
+
+
+## example 
+# https://gist.github.com/ctufts/eaca046a72af650a9b12f9751d95ff8d
+# plot_df <-df %>% group_by(feature) %>%
+#   do(
+#     plots = ggplot(data = .) + aes(x = xcol, y = ycol) +
+#       geom_point() + ggtitle(.$feature)
+#   )
+# 
+# # show plots
+# plot_df$plots
+
+## works
+
+# df <- allData2$data[[1]]
+# d <- ggplot(data = df, aes(x=wvl_center, y=reflectance, col = rDate)) + geom_line(aes(colour=rDate))
+#  d
+
+
+```
+
+
+
+
+
+```{r}
+# test renaming in dplyr using the numbers of the columns rather than the names
+    %>%
+      #changes names 
+      # https://stackoverflow.com/questions/42769650/how-to-dplyr-rename-a-column-by-column-index/42769771
+      rename_(bandNumber =names(.)[2], reflectance = names(.)[3])
+```
+
+
