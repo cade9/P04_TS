@@ -106,7 +106,7 @@ for (fn in sL) {
   # read in extracted data and group by datasource
   mDat_sub <- read_csv(fn, guess_max = 3800) %>%
     # remove unces. columns
-    select(-colRe) %>%
+    select(-matches(colRe)) %>%
     group_by(shpSource) %>%
     nest()
   
@@ -176,8 +176,6 @@ for (fn in sL) {
     mutate(Species_1 = str_replace_all(Species_1, c("water" = "Water"))) %>%
     left_join(classKey) %>%
     filter(!is.na(Species_1)) %>%
-    # remove yearcomm column
-    dplyr::select(-yearcomm) %>%
     # add spot id for part 2
     #### PART 2: Filter out duplicate locations #####
     mutate(spotID = paste0(rDate, "_", ras_row, "_", ras_col)) %>%
