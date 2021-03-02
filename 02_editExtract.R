@@ -27,7 +27,6 @@ if(Sys.info()["sysname"] == "Windows"){
 # The following variables should be defined by the user each time.
 #### INPUT FILES ####
 # 1) list of the extracted spectral CSVs
-
 sL <- list.files("./Output/CSV/00_extractSpectra_feb28", full.names = T )
 
 # made updates to the classKey file 
@@ -87,7 +86,7 @@ return(df2)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ####             END USER DEFINED VARIABLES        ####
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-select_if(~sum(!is.na(.)) > 0)
+#select_if(~sum(!is.na(.)) > 0)
 
 # columns to remove 
 colRe <- c("GPS_Date", "GPS_Time","Lifeform",	"Class",	"ORIG_FID",	"Area",	"ORIG_FID_1", "Area_1",
@@ -103,7 +102,6 @@ colRe <- c("GPS_Date", "GPS_Time","Lifeform",	"Class",	"ORIG_FID",	"Area",	"ORIG
 # read in class key
 classKey <- read_csv(ckN)
 
-
 for (fn in sL) {
   # read in extracted data and group by datasource
   mDat_sub <- read_csv(fn, guess_max = 3800) %>%
@@ -117,36 +115,59 @@ for (fn in sL) {
   mIndex <- which(mDat_sub$shpSource == "mui_edit")
   # determine year
   # TODO ~! determine if this is the best way to extract the date string 
+  
+  # determine year and month of the raster
   yrCol <- str_extract(fn, "(?!_)\\d{8}(?=_)")
+  monthCol <- month(ymd(yrCol))
   
     # conditions for filtering mui data
-    # filter 2017 based on what she labeled as suitable for 2017 
-    # WHAT IS THE best course of action here.... 
-    # you should actually look at the spatial distribution of Muis points on top of the images before you decide
-  
+    # because we extracted all points in each fall2017, fall2018, fall2019, spring2019
+
+    #### 2017 Filter ####
     if (str_detect(yrCol, "2017") == T) {
-      muiDate <- "X_20171101"
-      # if 2018
-    } else if (str_detect(yrCol, "2018") == T) {
-      muiDate <- "X_20181007"
-      # if 2019
-    } else if (str_detect(yrCol, "2019") == T) {
-      # determine if spring + winter or summer + fall
-      monthCol <- month(ymd(yrCol))
+      # if year 2017 and month winter or spring 
       if (monthCol %in% c(12,1,2,3,4,5)) {
-        muiDate <- "X_20190425"
-      } else if (monthCol %in% c(6,7,8,9,10,11)) {
-        muiDate <- "X_20191002"
-      }
+        # select points that are not 0 in both the 2017 fall and 2019 spring column
+        mDat_sub$data[[mIndex]] <- mDat_sub$data[[mIndex]] %>%  
+        filter(X_20190425  != 0 | X_20171101  != 0) 
+        # else if year 2017 and month summer or fall
+        } else if (monthCol %in% c(6,7,8,9,10,11)) {
+          # select non zero 2017 fall points 
+          mDat_sub$data[[mIndex]] <- mDat_sub$data[[mIndex]] %>%  
+          filter(X_20171101 != 0)
+        }
+     
+      #### 2018 Filter ####
+    } else if (str_detect(yrCol, "2018") == T) {
+      # if year 2018 and month winter or spring 
+      if (monthCol %in% c(12,1,2,3,4,5)) {
+        # select points that are not 0 in both the 2018 fall and 2019 spring column
+        mDat_sub$data[[mIndex]] <- mDat_sub$data[[mIndex]] %>%  
+        filter(X_20190425  != 0 | X_20181007  != 0) 
+        # else if year 2018 and month summer or fall
+        } else if (monthCol %in% c(6,7,8,9,10,11)) {
+          # select non zero 2018 fall points 
+          mDat_sub$data[[mIndex]] <- mDat_sub$data[[mIndex]] %>%  
+          filter(X_20181007 != 0)
+        }
+
+      #### 2019 Filter ####
+    } else if (str_detect(yrCol, "2019") == T) {
+          # if year 2018 and month winter or spring 
+      if (monthCol %in% c(12,1,2,3,4,5)) {
+        # select points that are not 0 in the 2019 spring column
+        mDat_sub$data[[mIndex]] <- mDat_sub$data[[mIndex]] %>%  
+        filter(X_20190425  != 0 ) 
+        # else if year 2019 and month summer or fall
+        } else if (monthCol %in% c(6,7,8,9,10,11)) {
+          # select non zero 2019 fall points 
+          mDat_sub$data[[mIndex]] <- mDat_sub$data[[mIndex]] %>%  
+          filter(X_20191002 != 0)
+        }
     }
 
-   
-  
-  ## Changed March 1 2021
-  
-    mDat_sub$data[[mIndex]] <- mDat_sub$data[[mIndex]] %>%  
-    filter(X_20190425  == 1 & X_20191002  == 1)
-  
+
+
   ## ungroup, add in class key, and remove spectra that have NA in the species column
   mDat_ungroup <- mDat_sub %>%
     unnest(cols = c(data)) %>%
@@ -170,7 +191,7 @@ for (fn in sL) {
   bn <- str_extract(fn,"(?=[^\\\\|/]*$)(.)+(?=\\.)")
   # write file 
   eDate <- str_replace_all(Sys.Date(),  "-","")
-  write_csv(mDat_ungroup, paste0(outDir, "/",bn,"_classAdd_",eDate,".csv"))
+  write_csv(mDat_ungroup, paste0(outDir, "/",bn,"_extEdit1_",eDate,".csv"))
   print(bn)
 }
 
