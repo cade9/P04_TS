@@ -47,3 +47,65 @@ for (s in sL){
 
 ```
 
+
+## for easy viewing 3/2
+I think it makes sense to use the spring ones for all the spring files
+test on 2018.
+Want to check if you should use the spring file or the fall file. 
+So open the closest 2018 spring file and look at it for both SAV and FLT 
+```{r}
+outDir <- "./Output/Vector/00_editTrainTest/view"
+```
+
+2019 
+# SAV
+```{r}
+spr19 <- readOGR("./Output/Vector/00_editTrainTest/version2/Spring2019_editV2.shp")
+savSpr19 <- spr19 %>% filter(str_detect(Species_1, "SAV"))
+writeOGR(savSpr19, outDir, "Spring2019_editV2_sav", driver = "ESRI Shapefile")
+```
+
+# filter 2019 spring sav for the ones mui actually selected 
+```{r}
+savSpr19_fil <- spr19 %>% filter(str_detect(Species_1, "SAV")) %>% filter(X_20190425 == 1)
+writeOGR(savSpr19_fil, outDir, "Spring2019_editV2_savFil", driver = "ESRI Shapefile")
+```
+
+2018 
+#### 2018 sav 
+```{r}
+fall18 <- readOGR("./Output/Vector/00_editTrainTest/version2/fall2018_editV2.shp")
+savfall18 <- fall18  %>% filter(str_detect(Species_1, "SAV"))
+writeOGR(savfall18, outDir, "fall2018_editV2_sav", driver = "ESRI Shapefile", overwrite_layer = T)
+```
+# filter 2018 sav for the ones mui actually selected 
+```{r}
+savfall18_fil <- fall18 %>% filter(str_detect(Species_1, "SAV")) %>% filter(X_20181007 == 1)
+writeOGR(savfall18_fil, outDir, "fall2018_editV2_savFil", driver = "ESRI Shapefile", overwrite_layer = T)
+```
+
+```{r}
+fall17 <- readOGR("./Output/Vector/00_editTrainTest/version2/fall2017_editV2.shp")
+savfall17 <- fall17 %>% filter(str_detect(Species_1, "SAV"))
+outDir <- "./Output/Vector/00_editTrainTest/view"
+writeOGR(savfall17, outDir, "fall2017_editV2_sav", driver = "ESRI Shapefile", overwrite_layer = T)
+```
+
+Both have good locations for SAV, so I would keep both of them 
+- what are we deciding here again 
+if we want to use the filter mui column for the fall or spring 
+
+Do you want to do the same for fall, or are there just way too many points?
+
+
+How many points are not there in the fall, but are there in the spring?
+
+
+```{r}
+fall19 <- readOGR("./Output/Vector/00_editTrainTest/version2/fall2019_editV2.shp")
+
+fallFil <- fall19@data %>% 
+  filter(X_20190425 != 0 & X_20191002 == 0) %>%
+   as_tibble()
+```
+There are 8 points from the fall dates that mui said were in the 
