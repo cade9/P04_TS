@@ -104,7 +104,7 @@ classKey <- read_csv(ckN)
 
 for (fn in sL) {
   # read in extracted data and group by datasource
-  mDat_sub <- read_csv(fn, guess_max = 3800) %>%
+  mDat_sub <- read_csv(fn, guess_max = 3800, col_types = cols()) %>%
     # remove unces. columns
     select(-matches(colRe)) %>%
     group_by(shpSource) %>%
@@ -175,7 +175,12 @@ for (fn in sL) {
     # change the naming of Water in species one even thoug  the class key accounts for it
     mutate(Species_1 = str_replace_all(Species_1, c("water" = "Water"))) %>%
     left_join(classKey) %>%
+    # filter empty species 
     filter(!is.na(Species_1)) %>%
+    # filter empty ras_row and ras_col
+    filter(!is.na(ras_col)) %>%
+    # filter any points with empty spectra
+    filter(!is.na(Blue)) %>%
     # add spot id for part 2
     #### PART 2: Filter out duplicate locations #####
     mutate(spotID = paste0(rDate, "_", ras_row, "_", ras_col)) %>%
