@@ -27,11 +27,15 @@ projDir <- getwd()
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # The following variables should be defined by the user each time.
 #### INPUT FILES ####
+# bad 2018-2019
+badD<- str_c(c("20181116", "20181201", "20190420", "20190430", "20190629","20190729", "20190828", 
+             "20190525", "20190624", "20191111", "20191231"), collapse = "|")
 # 1) Reflectance Rasters
 rL <- list.files(paste0(pDir,"Data/Raster/Sentinel2/S2_Level2_10mStack"), pattern = "BOA_.*dat$", full.names = T, recursive = T)
-
+rL <- str_subset(rL, badD, negate = T)
+rL
 #2 ) detect cores
-useCores <- 5 #detectCores()*3/4
+useCores <- 4 #detectCores()*3/4
 #Register CoreCluster
 cl <- makeCluster(useCores)
 registerDoParallel(cl)
