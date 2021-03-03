@@ -1,26 +1,28 @@
-# Title: 06_VI_rSamp.R
-# Status:
+# Title: 05_addVI.R
 # Author: Christiana Ade
-# Date: 1/5/2020
-# Modified: 
-# Purpose: Add vegetation indexes to the extracted points and do a random sample 
-# or should you do a random sample on the model that gives you the best results 
-# **Requires** 
-# 1)  
+# Date: 3/3/2021
+# Purpose: Add vegetation indexes to the extracted points
 ####################################################################################
 ## require packages
 require(tidyverse)
 require(stringr)
+# Determine OS
+if(Sys.info()["sysname"] == "Windows"){
+  pDir <- ("Z:/") } else {
+    pDir <- "/beanstore/"
+  }
+# project directory
+projDir <- getwd()
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ####             START USER DEFINED VARIABLES       #### 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # The following variables should be defined by the user each time.
 #### INPUT FILES ####
-fL <- list.files("./Output/CSV/04_editSpec", full.names = T)
+fL <- list.files(paste0(projDir,"/Output/CSV/03_caFil"), full.names = T)
 #### OUTPUT FILES ####
-outDir <- "./Output/CSV/05_addVI"
+outDir <- paste0(projDir, "/Output/CSV/05_addVI")
 #### USER DEFINED FUNCTIONS ####
-source("./Functions/VegIndex.R")
+source(paste0(projDir,"/Functions/VegIndex.R"))
 applyIndex <- function(dfN, outDir) {
   varsS2 <- c("BlueAersol", "Blue","Green","Red","VR1","VR2","VR3","NIR","SWIR1","SWIR2")
   df2 <- read_csv(dfN) %>%
