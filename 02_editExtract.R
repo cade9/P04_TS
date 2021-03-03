@@ -33,7 +33,6 @@ sL <- list.files("./Output/CSV/00_extractSpectra_feb28", full.names = T )
 # FLT-cade and kept NPV-FLT
 ckN <- "./Data/CSV/02_ClassPartKey_feb28.csv"
 
-
 #### OUTPUT FILES ####
 # 1) Out Directory
 outDir <- "./Output/CSV/02_editExtract_feb28"
@@ -89,10 +88,10 @@ return(df2)
 #select_if(~sum(!is.na(.)) > 0)
 
 # columns to remove 
-colRe <- c("GPS_Date", "GPS_Time","Lifeform",	"Class",	"ORIG_FID",	"Area",	"ORIG_FID_1", "Area_1",
-           "randno","Rake_Spe11",	"Rake_Spe12", "Photo_Link", "yearcomm", "Photos", 
-           "Team", "ID", "Horz_Prec", "Northing", "Easting", "Datafile",
-           "Unfilt_Pos", "Filt_Pos","GNSS_Lengt")
+# colRe <- c("GPS_Date", "GPS_Time","Lifeform",	"Class",	"ORIG_FID",	"Area",	"ORIG_FID_1", "Area_1",
+#            "randno","Rake_Spe11",	"Rake_Spe12", "Photo_Link", "yearcomm", "Photos", 
+#            "Team", "Horz_Prec", "Northing", "Easting", "Datafile",
+#            "Unfilt_Pos", "Filt_Pos","GNSS_Lengt")
 
 
 
@@ -106,7 +105,8 @@ for (fn in sL) {
   # read in extracted data and group by datasource
   mDat_sub <- read_csv(fn, guess_max = 3800, col_types = cols()) %>%
     # remove unces. columns
-    select(-matches(colRe)) %>%
+    select_if(~sum(!is.na(.)) > 0) %>%
+    # select(-(colnames(.) %in% colRe)) %>%
     group_by(shpSource) %>%
     nest()
   
